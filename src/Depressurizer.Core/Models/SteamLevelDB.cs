@@ -1,16 +1,18 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Depressurizer.Core.Interfaces;
 using LevelDB;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Linq;
+using static Depressurizer.Core.Helpers.SteamJsonCollectionHelper;
 
 namespace Depressurizer.Core.Models
 {
-    public class SteamLevelDB
+    public class SteamLevelDB : ISteamCollectionSaveManager
     {
         private readonly string databasePath;
         private readonly string steamID3;
@@ -25,7 +27,7 @@ namespace Depressurizer.Core.Models
             this.steamID3 = steamID3;
         }
 
-        public List<CloudStorageNamespace.Element.SteamCollectionValue> getSteamCollections()
+        public List<DepressurizerSteamCollectionValue> getSteamCollections()
         {
             var options = new Options()
             {
@@ -52,14 +54,18 @@ namespace Depressurizer.Core.Models
                 }));
             }
 
-            List<CloudStorageNamespace.Element.SteamCollectionValue> steamCollections = new List<CloudStorageNamespace.Element.SteamCollectionValue>();
+            List<DepressurizerSteamCollectionValue> steamCollections = new List<DepressurizerSteamCollectionValue>();
             foreach (var item in collections.children.Values)
             {
                 if (item.key.StartsWith("user-collections") && !item.is_deleted)
                 {
                     if (item.collectionValue != null)
                     {
-                        steamCollections.Add(item.collectionValue);
+                        steamCollections.Add(new DepressurizerSteamCollectionValue()
+                            {
+                                name = item.key,
+                                steamCollectionValue = item.collectionValue
+                            });
                     }
                 }
             }
@@ -69,37 +75,7 @@ namespace Depressurizer.Core.Models
 
         public void setSteamCollections(Dictionary<long, GameInfo> Games)
         {
-            var categoryData = new Dictionary<string, List<long>>();
-
-            // Prepare output categories
-            foreach (GameInfo game in Games.Values)
-            {
-                foreach (Category c in game.Categories)
-                {
-                    string categoryName = c.Name.ToUpper();
-
-                    if (!categoryData.ContainsKey(categoryName))
-                    {
-                        categoryData[categoryName] = new List<long>();
-                    }
-
-                    categoryData[categoryName].Add(game.Id);
-                }
-            }
-
-            var newArray = GenerateCategories(categoryData);
-
-            JObject existingObj = ToObjectByKey(parsedCatalog);
-            JObject newObj = ToObjectByKey(newArray);
-            existingObj.Merge(newObj, new JsonMergeSettings
-            {
-                MergeArrayHandling = MergeArrayHandling.Union
-            });
-
-            byte[] encodedArray = catalogEncoding.GetBytes(ToArrayFromKeyedObject(existingObj).ToString(Formatting.None));
-            byte[] res = new byte[encodedArray.Length + 1];
-            res[0] = (byte)(catalogEncoding.CodePage == Encoding.Unicode.CodePage ? 0x01 : 0x00);
-            Buffer.BlockCopy(encodedArray, 0, res, 1, encodedArray.Length);
+            var res = MergeData(parsedCatalog, Games, true);
 
             // Save the new categories in leveldb
             var options = new Options()
@@ -111,103 +87,23 @@ namespace Depressurizer.Core.Models
             db.Close();
         }
 
-        private JArray GenerateCategories(Dictionary<string, List<long>> categoryData)
+        public bool IsSupported()
         {
-            var result = new JArray();
-            long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            string version = DateTime.UtcNow.ToString("yyyyMMdd");
-
-            foreach (var entry in categoryData)
+            var options = new Options()
             {
-                string categoryName = entry.Key;
-                List<long> gameIds = entry.Value;
+                ParanoidChecks = true,
+            };
 
-                string id = "uc-" + GetDeterministicId(categoryName);
-                string key = "user-collections." + id;
-
-                var inner = new JObject
-                {
-                    ["key"] = key,
-                    ["timestamp"] = timestamp,
-                    ["value"] = JsonConvert.SerializeObject(new
-                    {
-                        id = id,
-                        name = categoryName.ToUpper(),
-                        added = gameIds,
-                        removed = new List<int>()
-                    }),
-                    ["version"] = version,
-                    ["conflictResolutionMethod"] = "custom",
-                    ["strMethodId"] = "union-collections"
-                };
-
-                result.Add(new JArray { key, inner });
-            }
-
-            return result;
-        }
-
-        private JObject ToObjectByKey(JArray array)
-        {
-            var obj = new JObject();
-            foreach (var item in array)
+            using (var db = new DB(options, this.databasePath))
             {
-                if (item is JArray arr && arr.Count == 2)
+                foreach (var t in db)
                 {
-                    obj[arr[0]?.ToString()] = arr[1];
+                    if (t.Key == Encoding.UTF8.GetBytes(KeyPrefix))
+                        return true;
+
                 }
             }
-            return obj;
+            return false;
         }
-
-        private JArray ToArrayFromKeyedObject(JObject obj)
-        {
-            var array = new JArray();
-            foreach (var prop in obj)
-            {
-                array.Add(new JArray { prop.Key, prop.Value });
-            }
-            return array;
-        }
-
-        private string GetDeterministicId(string input)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var hash = sha256.ComputeHash(catalogEncoding.GetBytes(input.ToLowerInvariant()));
-                return Convert.ToBase64String(hash).Replace("+", "").Replace("/", "").Replace("=", "").Substring(0, 12);
-            }
-        }
-
-        public class CloudStorageNamespace
-        {
-            public Dictionary<string, Element> children { get; } = new Dictionary<string, Element>();
-
-            public class Element
-            {
-                private SteamCollectionValue collectionValue1;
-
-                public string key { get; set; }
-                public int timestamp { get; set; }
-                public bool is_deleted { get; set; }
-                public string value { get; set; }
-
-                public SteamCollectionValue collectionValue
-                {
-                    get => collectionValue1 ?? (collectionValue1 = JsonConvert.DeserializeObject<SteamCollectionValue>(value));
-                    set => collectionValue1 = value;
-                }
-
-                public class SteamCollectionValue
-                {
-                    public string id { get; set; }
-                    public string name { get; set; }
-                    public long[] added { get; set; }
-                    public long[] removed { get; set; }
-                }
-            }
-        }
-
     }
-
 }

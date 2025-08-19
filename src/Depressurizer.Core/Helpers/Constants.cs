@@ -50,6 +50,11 @@ namespace Depressurizer.Core.Helpers
         public static string LocalConfig => @"{0}\userdata\{1}\config\localconfig.vdf";
 
         /// <summary>
+        ///     Generic path to cloud-storage-namespace-1.json, must be formatted with the Steam installation path and the Steam ID.
+        /// </summary>
+        public static string CloudStorageNamespace1 => @"{0}\userdata\{1}\config\cloudstorage\cloud-storage-namespace-1.json";
+
+        /// <summary>
         ///     Generic path to packageinfo.vdf, must be formatted with the Steam installation path.
         /// </summary>
         public static string PackageInfo => @"{0}\appcache\packageinfo.vdf";

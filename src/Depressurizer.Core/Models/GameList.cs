@@ -1,3 +1,6 @@
+using Depressurizer.Core.Enums;
+using Depressurizer.Core.Helpers;
+using Depressurizer.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -8,9 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Xml;
 using System.Xml.XPath;
-using Depressurizer.Core.Enums;
-using Depressurizer.Core.Helpers;
-using Depressurizer.Core.Interfaces;
+using static Depressurizer.Core.Helpers.SteamJsonCollectionHelper;
 using static Depressurizer.Core.Models.SteamLevelDB;
 using ValueType = Depressurizer.Core.Enums.ValueType;
 
@@ -241,10 +242,12 @@ namespace Depressurizer.Core.Models
                 ExportSteamShortcuts(steamId);
             }
             // Include LevelDB
-            SteamLevelDB levelDB = new SteamLevelDB(Steam.ToSteam3Id(steamId));
+            ISteamCollectionSaveManager levelDB = new SteamLevelDB(Steam.ToSteam3Id(steamId));
+            if (!levelDB.IsSupported())
+                levelDB = new SteamJsonDB(Steam.ToSteam3Id(steamId));
             levelDB.setSteamCollections(Games);
 
-            Utils.RunProcess("steam://resetcollections");
+            //Utils.RunProcess("steam://resetcollections");
         }
 
         /// <summary>
@@ -627,6 +630,16 @@ namespace Depressurizer.Core.Models
         }
 
         /// <summary>
+        ///     Add or Remove the favorite attribute of a single game
+        /// </summary>
+        /// <param name="appId">Game ID to hide/unhide</param>
+        /// <param name="isHidden">Whether the game should be hidden.</param>
+        public void FavoriteGames(long appId, bool isFavorite)
+        {
+            Games[appId].SetFavorite(isFavorite);
+        }
+
+        /// <summary>
         ///     Loads category info from the steam config file for the given Steam user.
         /// </summary>
         /// <param name="steamId">Identifier of Steam user</param>
@@ -654,23 +667,45 @@ namespace Depressurizer.Core.Models
             return result;
         }
 
-        private void ImportSteamLevelDB(long steamId) {
+        private void ImportSteamLevelDB(long steamId)
+        {
             Logger.Info("Importing from Steam LevelDB: {0}", steamId);
 
-            SteamLevelDB levelDB = new SteamLevelDB(Steam.ToSteam3Id(steamId));
+            ISteamCollectionSaveManager levelDB = new SteamLevelDB(Steam.ToSteam3Id(steamId));
+            if (!levelDB.IsSupported())
+            {
+                levelDB = new SteamJsonDB(Steam.ToSteam3Id(steamId));
+            }
 
-            List<CloudStorageNamespace.Element.SteamCollectionValue> collections = levelDB.getSteamCollections();
+            List<DepressurizerSteamCollectionValue> collections = levelDB.getSteamCollections();
             Logger.Info("Found {0} Steam Collections", collections.Count);
             foreach (var game in Games.Values)
             {
                 SetGameCategories(game.Id, new List<Category>(), false);
             }
 
-            foreach(var collection in collections)
+            foreach (var collection in collections)
             {
-                foreach (var appId in collection.added)
+                foreach (var appId in collection.steamCollectionValue.added)
                 {
-                    Games[appId].AddCategory(GetCategory(collection.name));
+                    if (!Games.ContainsKey(appId))
+                    {
+                        var game = new GameInfo((int)appId, Database.GetName(appId), this);
+                        Games.Add(appId, game);
+                        SetGameCategories(game.Id, new List<Category>(), false);
+                        Logger.Verbose("Added new game found in Steam LevelDB: {0} - {1}", appId, game.Name);
+                    }
+                    if (collection.name.StartsWith("user-collections.hidden"))
+                    {
+                        HideGames(appId, true);
+                        continue;
+                    }
+                    if (collection.name.StartsWith("user-collections.favorite"))
+                    {
+                        FavoriteGames(appId, true);
+                        continue;
+                    }
+                    Games[appId].AddCategory(GetCategory(collection.steamCollectionValue.name));
                 }
             }
         }

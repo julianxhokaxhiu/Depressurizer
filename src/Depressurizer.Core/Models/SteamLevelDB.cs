@@ -62,10 +62,10 @@ namespace Depressurizer.Core.Models
                     if (item.collectionValue != null)
                     {
                         steamCollections.Add(new DepressurizerSteamCollectionValue()
-                            {
-                                name = item.key,
-                                steamCollectionValue = item.collectionValue
-                            });
+                        {
+                            name = item.key,
+                            steamCollectionValue = item.collectionValue
+                        });
                     }
                 }
             }
@@ -98,7 +98,7 @@ namespace Depressurizer.Core.Models
             {
                 foreach (var t in db)
                 {
-                    if (t.Key == Encoding.UTF8.GetBytes(KeyPrefix))
+                    if (Encoding.UTF8.GetString(t.Key) == KeyPrefix)
                         return true;
 
                 }

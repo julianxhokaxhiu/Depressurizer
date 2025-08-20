@@ -18,7 +18,7 @@ namespace Depressurizer.Core.Models
         private readonly string steamID3;
 
         private string KeyPrefix => $"_https://steamloopback.host\u0000\u0001U{steamID3}-cloud-storage-namespace-1";
-        private JArray parsedCatalog = new();
+        private JArray parsedCatalog = null;
         private Encoding catalogEncoding = Encoding.UTF8;
 
         public SteamLevelDB(string steamID3)
@@ -29,21 +29,8 @@ namespace Depressurizer.Core.Models
 
         public List<DepressurizerSteamCollectionValue> getSteamCollections()
         {
-            var options = new Options()
-            {
-                ParanoidChecks = true,
-            };
-            var db = new DB(options, this.databasePath);
-            byte[] dataBytes = db.Get(Encoding.UTF8.GetBytes(KeyPrefix));
 
-            if (dataBytes[0] == 0x0) catalogEncoding = Encoding.Unicode;
-            else catalogEncoding = Encoding.UTF8;
-
-            string data = catalogEncoding.GetString(dataBytes.Skip(1).ToArray());
-
-            db.Close();
-
-            parsedCatalog = JArray.Parse(data);
+            setParsedCatalog();
 
             CloudStorageNamespace collections = new CloudStorageNamespace();
             foreach (JToken item in parsedCatalog.Children())
@@ -75,6 +62,8 @@ namespace Depressurizer.Core.Models
 
         public void setSteamCollections(Dictionary<long, GameInfo> Games)
         {
+            if (parsedCatalog == null)
+                setParsedCatalog();
             var res = MergeData(parsedCatalog, Games, true);
 
             // Save the new categories in leveldb
@@ -85,6 +74,27 @@ namespace Depressurizer.Core.Models
             var db = new DB(options, this.databasePath);
             db.Put(Encoding.UTF8.GetBytes(KeyPrefix), res);
             db.Close();
+        }
+
+        private void setParsedCatalog()
+        {
+            parsedCatalog = new();
+            var options = new Options()
+            {
+                ParanoidChecks = true,
+            };
+
+            var db = new DB(options, this.databasePath);
+            byte[] dataBytes = db.Get(Encoding.UTF8.GetBytes(KeyPrefix));
+
+            if (dataBytes[0] == 0x0) catalogEncoding = Encoding.Unicode;
+            else catalogEncoding = Encoding.UTF8;
+
+            string data = catalogEncoding.GetString(dataBytes.Skip(1).ToArray());
+
+            db.Close();
+
+            parsedCatalog = JArray.Parse(data);
         }
 
         public bool IsSupported()

@@ -14,7 +14,7 @@ namespace Depressurizer.Core.Models
     public class SteamJsonDB : ISteamCollectionSaveManager
     {
         private readonly string filePath;
-        private JArray parsedCatalog = new();
+        private JArray parsedCatalog = null;
         private readonly string steamID3;
         private Encoding catalogEncoding = Encoding.UTF8;
 
@@ -25,10 +25,7 @@ namespace Depressurizer.Core.Models
 
         public List<DepressurizerSteamCollectionValue> getSteamCollections()
         {
-            using (StreamReader file = System.IO.File.OpenText(filePath))
-            {
-                parsedCatalog = JArray.Parse(file.ReadToEnd());
-            }
+            setParsedCatalog();
 
             CloudStorageNamespace collections = new CloudStorageNamespace();
             foreach (JToken item in parsedCatalog.Children())
@@ -61,12 +58,24 @@ namespace Depressurizer.Core.Models
 
         public void setSteamCollections(Dictionary<long, GameInfo> Games)
         {
+            if (parsedCatalog == null)
+                setParsedCatalog();
+
             var res = MergeData(parsedCatalog, Games, false);
 
             //Backup old file
             File.Copy(filePath, Path.GetDirectoryName(filePath) + "Backup-" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff"));
             // Save the new categories in file
             File.WriteAllBytes(filePath, res);
+        }
+
+        private void setParsedCatalog()
+        {
+            parsedCatalog = new();
+            using (StreamReader file = System.IO.File.OpenText(filePath))
+            {
+                parsedCatalog = JArray.Parse(file.ReadToEnd());
+            }
         }
 
         public bool IsSupported()

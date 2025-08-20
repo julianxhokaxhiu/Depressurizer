@@ -13,6 +13,7 @@ namespace Depressurizer.Core.Helpers
     public static class SteamJsonCollectionHelper
     {
         private static Encoding catalogEncoding = Encoding.UTF8;
+        private static Logger Logger => Logger.Instance;
 
         public static byte[] MergeData(JArray parsedCatalog, Dictionary<long, GameInfo> Games, bool isLevelDB)
         {
@@ -39,6 +40,28 @@ namespace Depressurizer.Core.Helpers
                     }
 
                     categoryData[categoryName].Add(game.Id);
+                }
+            }
+
+            //Clear old added data
+            foreach (JToken item in parsedCatalog.Children())
+            {
+                if (item?[0]?.ToString()?.StartsWith("user-collections") == true)
+                {
+                    try
+                    {
+                        var valueToken = item[1]?["value"];
+                        if (valueToken != null)
+                        {
+                            var collectionData = JObject.Parse(valueToken.ToString());
+                            var data = collectionData["added"];
+                            collectionData["added"] = new JArray();
+                            item[1]["value"] = collectionData.ToString(Formatting.None);
+                        }
+                    }catch(Exception ex)
+                    {
+                        Logger.Error(nameof(MergeData), ex);
+                    }
                 }
             }
 

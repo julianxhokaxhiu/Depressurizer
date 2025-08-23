@@ -64,6 +64,7 @@ namespace Depressurizer.Core.Models
         {
             if (parsedCatalog == null)
                 setParsedCatalog();
+                
             var res = MergeData(parsedCatalog, Games, Categories, true);
 
             // Save the new categories in leveldb
@@ -108,7 +109,7 @@ namespace Depressurizer.Core.Models
             {
                 foreach (var t in db)
                 {
-                    if (t.Key == Encoding.UTF8.GetBytes(KeyPrefix))
+                    if (Encoding.UTF8.GetString(t.Key) == KeyPrefix)
                         return true;
 
                 }

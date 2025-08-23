@@ -8,7 +8,7 @@ namespace Depressurizer.Core.Interfaces
     {
         public List<DepressurizerSteamCollectionValue> getSteamCollections();
 
-        public void setSteamCollections(Dictionary<long, GameInfo> Games);
+        public void setSteamCollections(Dictionary<long, GameInfo> Games, List<Category> Categories);
 
         public bool IsSupported();
     }

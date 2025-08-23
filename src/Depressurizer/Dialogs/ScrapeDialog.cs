@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Depressurizer.Core.Models;
+using Depressurizer.Properties;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using Depressurizer.Core.Models;
-using Depressurizer.Properties;
+using System.Threading;
 
 namespace Depressurizer.Dialogs
 {
@@ -20,12 +22,15 @@ namespace Depressurizer.Dialogs
 
         private string _timeLeft;
 
+        private bool _isRateLimited;
+
         #endregion
 
         #region Constructors and Destructors
 
         public ScrapeDialog(IEnumerable<ScrapeJob> scrapeJobs) : base(Resources.ScrapeDialog_Title, true)
         {
+            SingleThreadMode = true;
             _queue = new ConcurrentQueue<ScrapeJob>(scrapeJobs);
             TotalJobs = _queue.Count;
         }
@@ -102,6 +107,10 @@ namespace Depressurizer.Dialogs
             }
 
             stringBuilder.AppendLine(_timeLeft);
+
+            if (_isRateLimited)
+                stringBuilder.AppendLine(Resources.ScrapedRateLimit);
+
             SetText(stringBuilder.ToString());
         }
 
@@ -121,8 +130,21 @@ namespace Depressurizer.Dialogs
             {
                 AppId = job.ScrapeId
             };
-
-            newGame.ScrapeStore(FormMain.SteamWebApiKey, Database.LanguageCode);
+            Thread.Sleep((5*60*1000)/500); // 500 request per 5 minutes
+            newGame.ScrapeStore(FormMain.SteamWebApiKey, Database.LanguageCode, out bool rateLimited);
+            if (rateLimited) 
+            {
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
+                _isRateLimited = true;
+                while (stopWatch.ElapsedMilliseconds < (60*5*1000)) // Wait 5 minutes
+                {
+                    Thread.Sleep(1000);
+                    UpdateText();
+                }
+                _isRateLimited = false;
+                newGame.ScrapeStore(FormMain.SteamWebApiKey, Database.LanguageCode, out rateLimited);
+            }
             if (Stopped)
             {
                 return false;

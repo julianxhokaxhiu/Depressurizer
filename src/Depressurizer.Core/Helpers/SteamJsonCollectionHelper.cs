@@ -15,13 +15,22 @@ namespace Depressurizer.Core.Helpers
         private static Encoding catalogEncoding = Encoding.UTF8;
         private static Logger Logger => Logger.Instance;
 
-        public static byte[] MergeData(JArray parsedCatalog, Dictionary<long, GameInfo> Games, bool isLevelDB)
+        public static byte[] MergeData(JArray parsedCatalog, Dictionary<long, GameInfo> Games, List<Category> Categories, bool isLevelDB)
         {
             var categoryData = new Dictionary<string, List<long>>();
             var hiddenData = new List<long>();
             var favoriteData = new List<long>();
 
-            // Prepare output categories
+            // Create all categories
+            foreach (var cat in Categories)
+            {
+                if (!categoryData.ContainsKey(cat.Name))
+                {
+                    categoryData[cat.Name] = new List<long>();
+                }
+            }
+
+            // Prepare games in categories
             foreach (GameInfo game in Games.Values)
             {
                 if (game.IsHidden)
@@ -230,7 +239,15 @@ namespace Depressurizer.Core.Helpers
                     public string name { get; set; }
                     public long[] added { get; set; }
                     public long[] removed { get; set; }
-                }
+
+                    public SteamDynamicCollectionFilerValue? filterSpec { get; set; }
+
+                    public class SteamDynamicCollectionFilerValue
+                    {
+                        public long nFormatVersion { get; set; }
+                        public string strSearchText { get; set; }
+                    }
+                } 
             }
         }
     }

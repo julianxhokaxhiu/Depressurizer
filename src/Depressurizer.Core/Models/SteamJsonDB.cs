@@ -56,12 +56,12 @@ namespace Depressurizer.Core.Models
             return steamCollections;
         }
 
-        public void setSteamCollections(Dictionary<long, GameInfo> Games)
+        public void setSteamCollections(Dictionary<long, GameInfo> Games, List<Category> Categories)
         {
             if (parsedCatalog == null)
                 setParsedCatalog();
 
-            var res = MergeData(parsedCatalog, Games, false);
+            var res = MergeData(parsedCatalog, Games, Categories, false);
 
             //Backup old file
             File.Copy(filePath, Path.GetDirectoryName(filePath) + "Backup-" + DateTime.Now.ToString("yyyyMMdd_HHmmss_fff"));

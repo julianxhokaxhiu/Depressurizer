@@ -245,7 +245,7 @@ namespace Depressurizer.Core.Models
             ISteamCollectionSaveManager levelDB = new SteamLevelDB(Steam.ToSteam3Id(steamId));
             if (!levelDB.IsSupported())
                 levelDB = new SteamJsonDB(Steam.ToSteam3Id(steamId));
-            levelDB.setSteamCollections(Games);
+            levelDB.setSteamCollections(Games, Categories);
 
             //Utils.RunProcess("steam://resetcollections");
         }
@@ -686,26 +686,41 @@ namespace Depressurizer.Core.Models
 
             foreach (var collection in collections)
             {
-                foreach (var appId in collection.steamCollectionValue.added)
+                if (collection.steamCollectionValue.added.Length == 0)
                 {
-                    if (!Games.ContainsKey(appId))
-                    {
-                        var game = new GameInfo((int)appId, Database.GetName(appId), this);
-                        Games.Add(appId, game);
-                        SetGameCategories(game.Id, new List<Category>(), false);
-                        Logger.Verbose("Added new game found in Steam LevelDB: {0} - {1}", appId, game.Name);
-                    }
-                    if (collection.name.StartsWith("user-collections.hidden"))
-                    {
-                        HideGames(appId, true);
+                    //Empty Categories
+                    if (collection.name.StartsWith("user-collections.hidden") || collection.name.StartsWith("user-collections.favorite"))
                         continue;
-                    }
-                    if (collection.name.StartsWith("user-collections.favorite"))
-                    {
-                        FavoriteGames(appId, true);
+
+                    //Ignore dynamic collections
+                    if (collection.steamCollectionValue?.filterSpec != null)
                         continue;
+                    
+                    AddCategory(collection.steamCollectionValue.name);
+                }
+                else
+                {
+                    foreach (var appId in collection.steamCollectionValue.added)
+                    {
+                        if (!Games.ContainsKey(appId))
+                        {
+                            var game = new GameInfo((int)appId, Database.GetName(appId), this);
+                            Games.Add(appId, game);
+                            SetGameCategories(game.Id, new List<Category>(), false);
+                            Logger.Verbose("Added new game found in Steam LevelDB: {0} - {1}", appId, game.Name);
+                        }
+                        if (collection.name.StartsWith("user-collections.hidden"))
+                        {
+                            HideGames(appId, true);
+                            continue;
+                        }
+                        if (collection.name.StartsWith("user-collections.favorite"))
+                        {
+                            FavoriteGames(appId, true);
+                            continue;
+                        }
+                        Games[appId].AddCategory(GetCategory(collection.steamCollectionValue.name));
                     }
-                    Games[appId].AddCategory(GetCategory(collection.steamCollectionValue.name));
                 }
             }
         }

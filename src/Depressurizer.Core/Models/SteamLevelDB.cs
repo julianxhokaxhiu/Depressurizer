@@ -60,11 +60,12 @@ namespace Depressurizer.Core.Models
             return steamCollections;
         }
 
-        public void setSteamCollections(Dictionary<long, GameInfo> Games)
+        public void setSteamCollections(Dictionary<long, GameInfo> Games, List<Category> Categories)
         {
             if (parsedCatalog == null)
                 setParsedCatalog();
-            var res = MergeData(parsedCatalog, Games, true);
+                
+            var res = MergeData(parsedCatalog, Games, Categories, true);
 
             // Save the new categories in leveldb
             var options = new Options()

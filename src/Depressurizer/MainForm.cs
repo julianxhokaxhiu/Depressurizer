@@ -3245,7 +3245,6 @@ namespace Depressurizer
 
                     //RunAutoCats(currentProfile.AutoCats);  WILL THIS WORK?  ARE AUTOCATS SELECTED VALUES SET CORRECTLY
                     RunAutoCats(autoCats, true);
-                    RemoveEmptyCats();
                     FilterGameList(true);
                 }
             }

@@ -808,8 +808,6 @@ namespace Depressurizer.Core.Models
                         Games.Remove(g);
                     }
 
-                    RemoveEmptyCategories();
-
                     // Load launch IDs
                     LoadShortcutLaunchIds(steamId, out StringDictionary launchIds);
 

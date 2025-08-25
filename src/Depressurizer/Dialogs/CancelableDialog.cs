@@ -34,6 +34,9 @@ namespace Depressurizer.Dialogs
             TotalJobs = 1;
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public bool SingleThreadMode { get; set; }
+
         #endregion
 
         #region Delegates
@@ -81,8 +84,9 @@ namespace Depressurizer.Dialogs
         protected virtual void CancelableDialog_Load(object sender, EventArgs e)
         {
             Thread thread;
-
             int numberOfThreads = Math.Min(TotalJobs, Environment.ProcessorCount);
+            if (SingleThreadMode)
+                numberOfThreads = 1;
             for (int i = 0; i < numberOfThreads; i++)
             {
                 thread = new Thread(RunProcessChecked);

@@ -12,6 +12,11 @@ namespace Depressurizer.Dialogs
 {
     internal class ScrapeDialog : CancelableDialog
     {
+        private const int RATE_LIMIT_PERIOD_IN_MILLISECONDS = 5 * 60 * 1000;
+        private const int MAX_REQUESTS_IN_PERIOD = 500;
+        private const int WAIT_AFTER_GET_RATELIMITED_IN_MILLISECONDS = 5 * 60 * 1000;
+        private const int REFRESH_ESTIMATED_TIMER_INTERVAL = 1000;
+
         #region Fields
 
         private readonly ConcurrentQueue<ScrapeJob> _queue;
@@ -130,16 +135,16 @@ namespace Depressurizer.Dialogs
             {
                 AppId = job.ScrapeId
             };
-            Thread.Sleep((5*60*1000)/500); // 500 request per 5 minutes
+            Thread.Sleep(RATE_LIMIT_PERIOD_IN_MILLISECONDS / MAX_REQUESTS_IN_PERIOD);
             newGame.ScrapeStore(FormMain.SteamWebApiKey, Database.LanguageCode, out bool rateLimited);
             if (rateLimited) 
             {
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
                 _isRateLimited = true;
-                while (stopWatch.ElapsedMilliseconds < (60*5*1000)) // Wait 5 minutes
+                while (stopWatch.ElapsedMilliseconds < WAIT_AFTER_GET_RATELIMITED_IN_MILLISECONDS)
                 {
-                    Thread.Sleep(1000);
+                    Thread.Sleep(REFRESH_ESTIMATED_TIMER_INTERVAL);
                     UpdateText();
                 }
                 _isRateLimited = false;

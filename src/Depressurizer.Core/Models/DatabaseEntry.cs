@@ -443,9 +443,9 @@ namespace Depressurizer.Core.Models
         /// <param name="storeLanguage">
         ///     Steam Store language.
         /// </param>
-        public void ScrapeStore(string steamWebApi, StoreLanguage storeLanguage)
+        public void ScrapeStore(string steamWebApi, StoreLanguage storeLanguage, out bool rateLimited)
         {
-            ScrapeStore(steamWebApi, Language.LanguageCode(storeLanguage));
+            ScrapeStore(steamWebApi, Language.LanguageCode(storeLanguage), out rateLimited);
         }
 
         /// <summary>
@@ -454,9 +454,9 @@ namespace Depressurizer.Core.Models
         /// <param name="languageCode">
         ///     Steam API language code.
         /// </param>
-        public void ScrapeStore(string steamWebApi, string languageCode)
+        public void ScrapeStore(string steamWebApi, string languageCode, out bool rateLimited)
         {
-            AppType result = ScrapeStoreHelper(languageCode);
+            AppType result = ScrapeStoreHelper(languageCode, out rateLimited);
             SetTypeFromStoreScrape(result);
         }
 
@@ -707,10 +707,10 @@ namespace Depressurizer.Core.Models
             }
         }
 
-        private AppType ScrapeStoreHelper(string languageCode)
+        private AppType ScrapeStoreHelper(string languageCode, out bool rateLimited)
         {
             Logger.Verbose("Scraping {0}: Initiating scraping of the Steam Store.", AppId);
-
+            rateLimited = false;
             int redirectTarget = -1;
 
             HttpWebResponse resp = null;
@@ -811,6 +811,8 @@ namespace Depressurizer.Core.Models
             }
             catch (WebException e)
             {
+                if (e.Response is HttpWebResponse response && response?.StatusCode == HttpStatusCode.Forbidden)
+                    rateLimited = true;
                 Logger.Warn("Scraping {0}: Exception thrown while reading page - {1}.", AppId, e);
                 resp?.Dispose();
                 return AppType.Unknown;

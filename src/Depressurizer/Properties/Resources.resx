@@ -237,4 +237,7 @@
   <data name="SpecialCategoryMods" xml:space="preserve">
     <value>&lt;Mods&gt;</value>
   </data>
+  <data name="ScrapedRateLimit" xml:space="preserve">
+    <value>Steam store is rate limited. Wait 5 minutes</value>
+  </data>
 </root>

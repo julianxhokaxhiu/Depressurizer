@@ -74,6 +74,43 @@ namespace Depressurizer.Core.Helpers
                 }
             }
 
+            //Remove all known collections by category name
+            JArray cleanUpParsedCatalog = new JArray();
+            foreach (JToken item in parsedCatalog.Children())
+            {
+                if (item?[0]?.ToString()?.StartsWith("user-collections") == false)
+                {
+                    cleanUpParsedCatalog.Add(item);
+                    continue;
+                }
+                else
+                {
+                    try
+                    {
+                        var valueToken = item[1]?["value"];
+                        if (valueToken != null)
+                        {
+                            var collectionData = JObject.Parse(valueToken.ToString());
+                            var name = collectionData.Value<string>("name");
+                            if (Categories.Any(s => s.Name.ToUpper() == name.ToUpper()) || categoryData.Any(s => s.Key.ToUpper() == name.ToUpper()))
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                if (!string.IsNullOrEmpty(name)){
+                                    cleanUpParsedCatalog.Add(item);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(nameof(MergeData), ex);
+                    }
+                }
+            }
+
             var newCatdata = new Dictionary<string, List<long>>();
             newCatdata["user-collections.hidden"] = hiddenData;
             newCatdata["user-collections.favorite"] = favoriteData;
@@ -82,7 +119,7 @@ namespace Depressurizer.Core.Helpers
 
             var newArray = GenerateCategories(newCatdata);
 
-            JObject existingObj = ToObjectByKey(parsedCatalog);
+            JObject existingObj = ToObjectByKey(cleanUpParsedCatalog);
 
             JObject newObj = ToObjectByKey(newArray);
             existingObj.Merge(newObj, new JsonMergeSettings

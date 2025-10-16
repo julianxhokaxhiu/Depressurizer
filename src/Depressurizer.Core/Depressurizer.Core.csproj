@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
     <PackageReference Include="LevelDBSharp" Version="1.0.0" />
-    <PackageReference Include="newtonsoft.json" Version="13.0.3" />
-    <PackageReference Include="protobuf-net" Version="3.2.52" />
-    <PackageReference Include="ValveKeyValue" Version="0.13.1.398" />
+    <PackageReference Include="newtonsoft.json" Version="13.0.4" />
+    <PackageReference Include="protobuf-net" Version="3.2.56" />
+    <PackageReference Include="ValveKeyValue" Version="0.20.0.417" />
   </ItemGroup>
 
 </Project>

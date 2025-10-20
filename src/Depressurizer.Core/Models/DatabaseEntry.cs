@@ -725,6 +725,7 @@ namespace Depressurizer.Core.Models
                     if (Regexes.IsSteamStore.IsMatch(resp.Headers[HttpResponseHeader.Location]))
                     {
                         Logger.Warn("Scraping {0}: Location header points to the Steam Store homepage, aborting scraping.", AppId);
+                        LastStoreScrape = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                         return AppType.Unknown;
                     }
 
@@ -776,7 +777,8 @@ namespace Depressurizer.Core.Models
                 }
                 else if (resp.ResponseUri.Segments[1] != "app/")
                 {
-                    Logger.Warn("Scraping {0}: Redirected to a non-app URL, aborting scraping.", AppId);
+                    Logger.Warn("Scraping {0}: Redirected to a non-app URL ({1}), aborting scraping.", AppId, resp.ResponseUri.Segments[1]);
+                    LastStoreScrape = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     return AppType.Unknown;
                 }
                 // The URI ends with "/app/" ?

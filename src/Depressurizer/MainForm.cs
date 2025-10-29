@@ -3246,6 +3246,7 @@ namespace Depressurizer
                     //RunAutoCats(currentProfile.AutoCats);  WILL THIS WORK?  ARE AUTOCATS SELECTED VALUES SET CORRECTLY
                     RunAutoCats(autoCats, true);
                     FilterGameList(true);
+                    FillAllCategoryLists();
                 }
             }
         }
@@ -4370,10 +4371,12 @@ namespace Depressurizer
                 return false;
             }
 
-            if (lstCategories.SelectedItems.Count == 0)
+            var selectedItems = lstCategories.SelectedItems;
+            if (selectedItems.Count == 0)
             {
                 return false;
             }
+            var selectedItemsTag = lstCategories.SelectedItems[0].Tag;
 
             if (AdvancedCategoryFilter)
             {
@@ -4382,17 +4385,17 @@ namespace Depressurizer
 
             if (gameInfo.IsHidden)
             {
-                return lstCategories.SelectedItems[0].Tag.ToString() == Resources.SpecialCategoryHidden;
+                return selectedItemsTag.ToString() == Resources.SpecialCategoryHidden;
             }
 
             // <All>
-            if (lstCategories.SelectedItems[0].Tag.ToString() == Resources.SpecialCategoryAll)
+            if (selectedItemsTag.ToString() == Resources.SpecialCategoryAll)
             {
                 return true;
             }
 
             // <Uncategorized>
-            if (lstCategories.SelectedItems[0].Tag.ToString() == Resources.SpecialCategoryUncategorized)
+            if (selectedItemsTag.ToString() == Resources.SpecialCategoryUncategorized)
             {
                 return gameInfo.Categories.Count == 0;
             }
@@ -4400,30 +4403,30 @@ namespace Depressurizer
             bool inDatabase = Database.Contains(gameInfo.Id, out DatabaseEntry entry);
 
             // <Games>
-            if (lstCategories.SelectedItems[0].Tag.ToString() == Resources.SpecialCategoryGames)
+            if (selectedItemsTag.ToString() == Resources.SpecialCategoryGames)
             {
                 return inDatabase && entry.AppType == AppType.Game;
             }
 
             // <Mods>
-            if (lstCategories.SelectedItems[0].Tag.ToString() == Resources.SpecialCategoryMods)
+            if (selectedItemsTag.ToString() == Resources.SpecialCategoryMods)
             {
                 return inDatabase && entry.AppType == AppType.Mod;
             }
 
             // <Software>
-            if (lstCategories.SelectedItems[0].Tag.ToString() == Resources.SpecialCategorySoftware)
+            if (selectedItemsTag.ToString() == Resources.SpecialCategorySoftware)
             {
                 return inDatabase && entry.AppType == AppType.Application;
             }
 
             // <VR>
-            if (lstCategories.SelectedItems[0].Tag.ToString() == Resources.SpecialCategoryVR)
+            if (selectedItemsTag.ToString() == Resources.SpecialCategoryVR)
             {
                 return inDatabase && Database.SupportsVR(gameInfo.Id);
             }
 
-            if (!(lstCategories.SelectedItems[0].Tag is Category category))
+            if (!(selectedItemsTag is Category category))
             {
                 return false;
             }

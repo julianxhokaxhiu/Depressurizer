@@ -20,12 +20,15 @@ namespace Depressurizer.Core.Helpers
             var categoryData = new Dictionary<string, List<long>>();
             var hiddenData = new List<long>();
             var favoriteData = new List<long>();
+            var favoriteCategory = Games?.FirstOrDefault().Value?.FavoriteCategory;
 
             // Create all categories
             foreach (var cat in Categories)
             {
                 if (!categoryData.ContainsKey(cat.Name))
                 {
+                    if (cat == favoriteCategory)
+                        continue;
                     categoryData[cat.Name] = new List<long>();
                 }
             }
@@ -42,6 +45,9 @@ namespace Depressurizer.Core.Helpers
                 foreach (Category c in game.Categories)
                 {
                     string categoryName = c.Name.ToUpper();
+
+                    if (c == favoriteCategory)
+                        continue;
 
                     if (!categoryData.ContainsKey(categoryName))
                     {
@@ -155,18 +161,22 @@ namespace Depressurizer.Core.Helpers
 
                 string id = string.Empty;
                 string key = string.Empty;
+                string name = string.Empty;
                 switch (entry.Key)
                 {
                     case "user-collections.hidden":
-                        id = "user-collections.hidden";
+                        id = "hidden";
+                        name = "Hidden";
                         key = "user-collections.hidden";
                         break;
                     case "user-collections.favorite":
-                        id = "user-collections.favorite";
+                        id = "favorite";
+                        name = "Favorites";
                         key = "user-collections.favorite";
                         break;
                     default:
                         id = "uc-" + GetDeterministicId(categoryName);
+                        name = categoryName.ToUpper();
                         key = "user-collections." + id;
                         break;
                 }
@@ -178,7 +188,7 @@ namespace Depressurizer.Core.Helpers
                     ["value"] = JsonConvert.SerializeObject(new
                     {
                         id = id,
-                        name = categoryName.ToUpper(),
+                        name = name,
                         added = gameIds,
                         removed = new List<int>()
                     }),

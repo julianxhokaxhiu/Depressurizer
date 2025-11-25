@@ -100,21 +100,30 @@ namespace Depressurizer.Core.Models
 
         public bool IsSupported()
         {
-            var options = new Options()
+            try 
             {
-                ParanoidChecks = true,
-            };
+                if (!Path.Exists(this.databasePath))
+                    return false;
 
-            using (var db = new DB(options, this.databasePath))
-            {
-                foreach (var t in db)
+                var options = new Options()
                 {
-                    if (Encoding.UTF8.GetString(t.Key) == KeyPrefix)
-                        return true;
+                    ParanoidChecks = true,
+                };
 
+                using (var db = new DB(options, this.databasePath))
+                {
+                    foreach (var t in db)
+                    {
+                        if (Encoding.UTF8.GetString(t.Key) == KeyPrefix)
+                            return true;
+                    }
                 }
+                return false;
             }
-            return false;
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
     }
 }

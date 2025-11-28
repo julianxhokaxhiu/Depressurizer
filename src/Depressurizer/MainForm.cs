@@ -1579,32 +1579,21 @@ namespace Depressurizer
             foreach (GameInfo g in CurrentProfile.GameData.Games.Values)
             {
                 if (g.Id < 0 && !CurrentProfile.IncludeShortcuts)
-                {
                     continue;
-                }
 
                 if (g.IsHidden)
-                {
                     hidden++;
-                    continue;
-                }
 
                 all++;
 
                 if (!g.HasCategories())
-                {
                     uncategorized++;
-                }
 
                 if (g.Id <= 0 || !Database.Contains(g.Id, out DatabaseEntry entry))
-                {
                     continue;
-                }
 
                 if (Database.SupportsVR(g.Id))
-                {
                     vr++;
-                }
 
                 switch (entry.AppType)
                 {
@@ -4345,16 +4334,12 @@ namespace Depressurizer
         private bool ShouldDisplayGame(GameInfo gameInfo)
         {
             if (CurrentProfile == null || gameInfo == null)
-            {
                 return false;
-            }
 
             if (_currentFilterRegex != null)
             {
                 if (!_currentFilterRegex.IsMatch(gameInfo.Name))
-                {
                     return false;
-                }
             }
             else if (!string.IsNullOrWhiteSpace(mtxtSearch.Text) && gameInfo.Name.IndexOf(mtxtSearch.Text, StringComparison.CurrentCultureIgnoreCase) == -1)
             {
@@ -4362,80 +4347,55 @@ namespace Depressurizer
             }
 
             if (gameInfo.Id < 0 && !CurrentProfile.IncludeShortcuts)
-            {
                 return false;
-            }
 
             if (!CurrentProfile.GameData.Games.ContainsKey(gameInfo.Id))
-            {
                 return false;
-            }
 
             var selectedItems = lstCategories.SelectedItems;
             if (selectedItems.Count == 0)
-            {
                 return false;
-            }
+
             var selectedItemsTag = lstCategories.SelectedItems[0].Tag;
 
             if (AdvancedCategoryFilter)
-            {
                 return gameInfo.IncludeGame(_advFilter);
-            }
 
-            if (gameInfo.IsHidden)
-            {
-                return selectedItemsTag.ToString() == Resources.SpecialCategoryHidden;
-            }
+            if (gameInfo.IsHidden && selectedItemsTag.ToString() == Resources.SpecialCategoryHidden)
+                return true;
 
             // <All>
             if (selectedItemsTag.ToString() == Resources.SpecialCategoryAll)
-            {
                 return true;
-            }
 
             // <Uncategorized>
             if (selectedItemsTag.ToString() == Resources.SpecialCategoryUncategorized)
-            {
                 return gameInfo.Categories.Count == 0;
-            }
 
             bool inDatabase = Database.Contains(gameInfo.Id, out DatabaseEntry entry);
 
             // <Games>
             if (selectedItemsTag.ToString() == Resources.SpecialCategoryGames)
-            {
                 return inDatabase && entry.AppType == AppType.Game;
-            }
 
             // <Mods>
             if (selectedItemsTag.ToString() == Resources.SpecialCategoryMods)
-            {
                 return inDatabase && entry.AppType == AppType.Mod;
-            }
 
             // <Software>
             if (selectedItemsTag.ToString() == Resources.SpecialCategorySoftware)
-            {
                 return inDatabase && entry.AppType == AppType.Application;
-            }
 
             // <VR>
             if (selectedItemsTag.ToString() == Resources.SpecialCategoryVR)
-            {
                 return inDatabase && Database.SupportsVR(gameInfo.Id);
-            }
 
             if (!(selectedItemsTag is Category category))
-            {
                 return false;
-            }
 
             // <Favorite>
             if (category.Name == Resources.SpecialCategoryFavorite)
-            {
                 return gameInfo.IsFavorite();
-            }
 
             return gameInfo.ContainsCategory(category);
         }

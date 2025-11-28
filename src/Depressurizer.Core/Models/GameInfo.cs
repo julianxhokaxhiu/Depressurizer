@@ -193,7 +193,7 @@ namespace Depressurizer.Core.Models
                 return;
             }
 
-            if (Categories.Add(category) && !IsHidden)
+            if (Categories.Add(category))
             {
                 category.Count++;
             }
@@ -239,11 +239,6 @@ namespace Depressurizer.Core.Models
 
             foreach (Category category in Categories)
             {
-                if (IsHidden)
-                {
-                    continue;
-                }
-
                 category.Count--;
             }
 

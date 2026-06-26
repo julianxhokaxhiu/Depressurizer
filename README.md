@@ -1,3 +1,8 @@
+# This project has been ARCHIVED in favour of https://github.com/Crimsab/Repressurizer - unfortunately I miss the time to manage it and Steam keeps changing the interface to their library. I wish all the best to Crimsab in his new adventure!
+
+
+---
+
 # Depressurizer
 ![License](https://img.shields.io/github/license/julianxhokaxhiu/Depressurizer) ![Overall Downloads](https://img.shields.io/github/downloads/julianxhokaxhiu/Depressurizer/total?label=Overall%20Downloads) ![Latest Stable Downloads](https://img.shields.io/github/downloads/julianxhokaxhiu/Depressurizer/latest/total?label=Latest%20Stable%20Downloads&sort=semver) ![Latest Canary Downloads](https://img.shields.io/github/downloads/julianxhokaxhiu/Depressurizer/canary/total?label=Latest%20Canary%20Downloads) ![GitHub Actions Workflow Status](https://github.com/julianxhokaxhiu/Depressurizer/actions/workflows/main-9.3.0.yml/badge.svg?branch=master)
 

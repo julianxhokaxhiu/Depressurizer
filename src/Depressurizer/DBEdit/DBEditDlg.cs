@@ -974,9 +974,12 @@ namespace Depressurizer
                 }
             }
 
-            if (_currentFilter.Length > 0 && entry.Name.IndexOf(_currentFilter, StringComparison.CurrentCultureIgnoreCase) == -1)
+            if (!string.IsNullOrEmpty(_currentFilter))
             {
-                return false;
+                if (string.IsNullOrEmpty(entry.Name) || entry.Name.IndexOf(_currentFilter, StringComparison.CurrentCultureIgnoreCase) == -1)
+                {
+                    return false;
+                }
             }
 
             return true;
